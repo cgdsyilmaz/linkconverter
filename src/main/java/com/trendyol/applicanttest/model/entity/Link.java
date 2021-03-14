@@ -1,7 +1,7 @@
-package com.trendyol.applicanttest.entity;
+package com.trendyol.applicanttest.model.entity;
 
-import com.trendyol.applicanttest.enums.LinkType;
-import com.trendyol.applicanttest.enums.PageType;
+import com.trendyol.applicanttest.model.LinkType;
+import com.trendyol.applicanttest.model.PageType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

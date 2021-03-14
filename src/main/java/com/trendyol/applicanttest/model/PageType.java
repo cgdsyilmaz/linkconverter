@@ -1,4 +1,4 @@
-package com.trendyol.applicanttest.enums;
+package com.trendyol.applicanttest.model;
 
 public enum PageType {
     ProductDetailPage,

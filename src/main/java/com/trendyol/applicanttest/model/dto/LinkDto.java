@@ -1,14 +1,20 @@
-package com.trendyol.applicanttest.dto;
+package com.trendyol.applicanttest.model.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * Only need the original link field of entity link while
  * constructing the converted links.
  */
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class LinkDto {
 

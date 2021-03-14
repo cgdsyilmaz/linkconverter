@@ -1,11 +1,12 @@
 package com.trendyol.applicanttest.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.trendyol.applicanttest.dto.LinkDto;
-import com.trendyol.applicanttest.entity.Link;
-import com.trendyol.applicanttest.enums.LinkType;
-import com.trendyol.applicanttest.enums.PageType;
+import com.trendyol.applicanttest.model.dto.LinkDto;
+import com.trendyol.applicanttest.model.entity.Link;
+import com.trendyol.applicanttest.model.LinkType;
+import com.trendyol.applicanttest.model.PageType;
 import com.trendyol.applicanttest.repository.LinkConverterRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,13 +16,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class WebUrlToDeeplinkServiceTest {
+class WebURLToDeeplinkServiceTest {
 
 	@Autowired
 	private LinkConverterRepository linkConverterRepository;
 
 	/**
-	 * Includes "-p-" text and content Id Should be classified as Product Detail Page.
+	 * Checks if database writes work correctly or not
 	 */
 	@Test
 	void checkIfSavedCorrectly() {
@@ -89,12 +90,12 @@ class WebUrlToDeeplinkServiceTest {
 		linkConverterRepository.saveAll(links);
 		List<Link> linkList = linkConverterRepository.findAll();
 
-		for (int i = 0; i < linkList.size(); i++) {
-			assertEquals(links.get(i).getOriginalLink(), linkList.get(i).getOriginalLink());
-			assertEquals(links.get(i).getConvertedLink(), linkList.get(i).getConvertedLink());
-			assertEquals(links.get(i).getLinkType(), linkList.get(i).getLinkType());
-			assertEquals(links.get(i).getPageType(), linkList.get(i).getPageType());
-		}
+		linkList.forEach(link -> {
+			assertEquals(link.getOriginalLink(), link.getOriginalLink());
+			assertEquals(link.getConvertedLink(), link.getConvertedLink());
+			assertEquals(link.getLinkType(), link.getLinkType());
+			assertEquals(link.getPageType(), link.getPageType());
+		});
 		assertEquals(linkConverterRepository.count(), links.size());
 	}
 
@@ -110,7 +111,7 @@ class WebUrlToDeeplinkServiceTest {
 				buildLinkDto("https://www.trendyol.com/casio/erkek-kol-saati-p-1925865"))
 			.getLink();
 
-		assertEquals(convertedLink, "ty://?Page=Product&ContentId=1925865");
+		assertEquals("ty://?Page=Product&ContentId=1925865", convertedLink);
 	}
 
 	/**
@@ -125,7 +126,7 @@ class WebUrlToDeeplinkServiceTest {
 				buildLinkDto("https://www.trendyol.com/casio/erkek-kol-saati-p-"))
 			.getLink();
 
-		assertEquals(convertedLink, "ty://?Page=Home");
+		assertEquals("ty://?Page=Home", convertedLink);
 	}
 
 	/**
@@ -140,7 +141,7 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/casio/erkek-kol-saati-p-1925865?boutiqueId=439892"))
 			.getLink();
 
-		assertEquals(convertedLink, "ty://?Page=Product&ContentId=1925865&CampaignId=439892");
+		assertEquals("ty://?Page=Product&ContentId=1925865&CampaignId=439892", convertedLink);
 	}
 
 	/**
@@ -155,7 +156,7 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/casio/erkek-kol-saati-p-1925865?merchantId=105064"))
 			.getLink();
 
-		assertEquals(convertedLink, "ty://?Page=Product&ContentId=1925865&MerchantId=105064");
+		assertEquals("ty://?Page=Product&ContentId=1925865&MerchantId=105064", convertedLink);
 	}
 
 	/**
@@ -171,8 +172,25 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/casio/saat-p-1925865?boutiqueId=439892&merchantId=105064"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Product&ContentId=1925865&CampaignId=439892&MerchantId=105064");
+		assertEquals("ty://?Page=Product&ContentId=1925865&CampaignId=439892&MerchantId=105064",
+			convertedLink);
+	}
+
+	/**
+	 * Includes "-p-" text, content Id, boutique Id and merchant Ids are empty Should be classified as Product
+	 * Detail Page.
+	 */
+	@Test
+	void checkForProductsDetailsPageWithEmptyBoutiqueAndMerchantIds() {
+		LinkConverterService linkConverterService = new LinkConverterService(linkConverterRepository);
+
+		String convertedLink = linkConverterService
+			.convertWebURLToDeeplink(buildLinkDto(
+				"https://www.trendyol.com/casio/saat-p-1925865?boutiqueId=&merchantId="))
+			.getLink();
+
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -187,8 +205,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/casio/saat-p-1925865?boutiqueId=439892&boutiqueId=439891&merchantId=105064"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -203,8 +221,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/casio/saat-p-1925865?boutiqueId=439892&merchantId=105063&merchantId=105064"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -219,8 +237,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/sr?q=elbise"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Search&Query=elbise");
+		assertEquals("ty://?Page=Search&Query=elbise",
+			convertedLink);
 	}
 
 	/**
@@ -235,8 +253,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/sr?q=%C3%BCt%C3%BC"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Search&Query=%C3%BCt%C3%BC");
+		assertEquals("ty://?Page=Search&Query=%C3%BCt%C3%BC",
+			convertedLink);
 	}
 
 	/**
@@ -251,8 +269,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/sr?q=çağdaş"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -267,8 +285,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/sr"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -283,8 +301,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/sr?q="))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -294,14 +312,15 @@ class WebUrlToDeeplinkServiceTest {
 	@Test
 	void checkForProductAndSearchPage() {
 		LinkConverterService linkConverterService = new LinkConverterService(linkConverterRepository);
+		assertDoesNotThrow(() -> {
+			String convertedLink = linkConverterService
+				.convertWebURLToDeeplink(buildLinkDto(
+					"https://www.trendyol.com/casio/sr?q=erkek-kol-saati-p-1925865"))
+				.getLink();
 
-		String convertedLink = linkConverterService
-			.convertWebURLToDeeplink(buildLinkDto(
-				"https://www.trendyol.com/casio/sr?q=erkek-kol-saati-p-1925865"))
-			.getLink();
-
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+			assertEquals("ty://?Page=Home",
+				convertedLink);
+		});
 	}
 
 	/**
@@ -316,8 +335,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/Hesabim/Favoriler"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	/**
@@ -332,8 +351,8 @@ class WebUrlToDeeplinkServiceTest {
 				"https://www.trendyol.com/Hesabim/#/Siparislerim"))
 			.getLink();
 
-		assertEquals(convertedLink,
-			"ty://?Page=Home");
+		assertEquals("ty://?Page=Home",
+			convertedLink);
 	}
 
 	@AfterEach

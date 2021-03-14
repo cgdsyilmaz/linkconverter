@@ -1,21 +1,26 @@
 package com.trendyol.applicanttest.service;
 
-import com.trendyol.applicanttest.dto.LinkDto;
-import com.trendyol.applicanttest.entity.Link;
-import com.trendyol.applicanttest.enums.LinkType;
-import com.trendyol.applicanttest.enums.PageType;
+import com.trendyol.applicanttest.converter.DeeplinkToWebURLConverter;
+import com.trendyol.applicanttest.converter.LinkConverter;
+import com.trendyol.applicanttest.converter.WebURLToDeeplinkConverter;
+import com.trendyol.applicanttest.exception.TrendyolLinkException;
+import com.trendyol.applicanttest.model.dto.LinkDto;
+import com.trendyol.applicanttest.model.entity.Link;
+import com.trendyol.applicanttest.model.LinkType;
+import com.trendyol.applicanttest.model.PageType;
 import com.trendyol.applicanttest.repository.LinkConverterRepository;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class LinkConverterService {
 
 	@NonNull
-	private LinkConverterRepository linkConverterRepository;
+	private final LinkConverterRepository linkConverterRepository;
 
 	/**
 	 * Converts WebURL to Deeplink.
@@ -25,16 +30,45 @@ public class LinkConverterService {
 	 */
 
 	public LinkDto convertWebURLToDeeplink(LinkDto webURLDto) {
-		LinkConverter webURLToDeeplinkConverter = new WebURLToDeeplinkConverter();
-		String convertedLink = webURLToDeeplinkConverter.convert(webURLDto.getLink());
+		return convertLink(webURLDto, new WebURLToDeeplinkConverter());
+	}
 
-		saveToLinkTable(webURLDto.getLink(), convertedLink, LinkType.WebURL,
-			webURLToDeeplinkConverter.extractPageType());
+	/**
+	 * Converts Deeplink to WebURL.
+	 *
+	 * @param deeplinkDto Deeplink to be converted to WebURL
+	 * @return WebURL which is converted from deeplink
+	 */
 
-		return LinkDto
-			.builder()
-			.link(convertedLink)
-			.build();
+	public LinkDto convertDeeplinktoWebURL(LinkDto deeplinkDto) {
+		return convertLink(deeplinkDto, new DeeplinkToWebURLConverter());
+	}
+
+	/**
+	 * Converts requested link to its counterpart.
+	 *
+	 * @param linkDto requested link to be converted to its counterpart
+	 * @param linkConverter converter to be used
+	 * @return Response link which is converted from given link
+	 */
+	private LinkDto convertLink(LinkDto linkDto, LinkConverter linkConverter) {
+		try {
+			String convertedLink = linkConverter.convert(linkDto.getLink(), linkConverter.getLinkType());
+
+			saveToLinkTable(linkDto.getLink(), convertedLink, linkConverter.getLinkType(), linkConverter.getPageType());
+
+			return LinkDto
+				.builder()
+				.link(convertedLink)
+				.build();
+
+		} catch (TrendyolLinkException e) {
+			log.warn(String.format("Failed to convert link: %s", linkDto.getLink()), e);
+			return LinkDto
+				.builder()
+				.link(linkConverter.convertHomePage())
+				.build();
+		}
 	}
 
 	/**
@@ -45,7 +79,6 @@ public class LinkConverterService {
 	 * @param linkType original link's type
 	 * @param pageType original link's page type
 	 */
-
 	private void saveToLinkTable(String originalLink, String convertedLink, LinkType linkType,
 		PageType pageType) {
 

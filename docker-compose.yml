@@ -1,0 +1,35 @@
+version: '3'
+services:
+  app:
+    container_name: link-converter
+    image: link-converter
+    build: ./
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - applicant-network
+    environment:
+      DATASOURCE_HOST: db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/applicantDB
+  db:
+    image: postgres:latest
+    container_name: db
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: applicantDB
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - applicant-network
+    restart: unless-stopped
+networks:
+  applicant-network:
+volumes:
+  db-data:
